@@ -1,478 +1,815 @@
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Jane Doe: The Confidentiality Network</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Chosen Palette: Blooming Duo (bg-emerald-50, text-gray-700, text-fuchsia-700 accent) -->
-    <!-- Application Structure Plan: A single-page, vertically scrolling site with a fixed nav (Problem, Solution, Features, Impact) that mirrors the report's logical flow. This structure is the most intuitive for presenting a proposal. Key interactions include tabbed navigation for 'Features' to organize details, and a simulated 'AI Triage' dashboard (slider + doughnut chart + dynamic list) to make the core concept tangible and interactive. -->
-    <!-- Visualization & Content Choices: Report Info: "The Problem" (3 barriers) -> Goal: Organize -> Viz: HTML/Tailwind cards -> Interaction: Hover -> Justification: Clean segmentation. Report Info: "Key Features" -> Goal: Organize -> Viz: Tabbed Interface -> Interaction: Click -> Justification: Prevents clutter. Report Info: "Case Viability Score" -> Goal: Demonstrate concept -> Viz: Chart.js Doughnut Chart -> Interaction: HTML Slider updates chart data & dynamic checklist text -> Justification: Makes the AI concept interactive and concrete. Report Info: "Impact" -> Goal: Organize -> Viz: HTML/Tailwind cards -> Interaction: Hover -> Justification: Consistent layout. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <!-- 
+      REFACTORING NOTE: Per user feedback, the tabbed interface for Core Pillars (Section #features) is a poor UX choice for a pitch deck, as it hides crucial information.
+      
+      ACTION:
+      1.  REMOVED the <div id="tabs-buttons">...</div> entirely.
+      2.  REMOVED the <div class="lg:w-3/4">...</div> wrapper.
+      3.  CHANGED the parent container <div class="mt-12 flex flex-col lg:flex-row gap-8"> to <div class="mt-12 grid grid-cols-1 gap-8">. This will stack the pillars vertically.
+      4.  REMOVED the "hidden" class from #tab-B, #tab-C, #tab-D, and #tab-E to make them all visible by default.
+      5.  REMOVED the "// --- Tabbed Content Logic ---" block from the <script> as it is no longer needed.
+      
+      This change makes all five pillars visible on page load, improving clarity and ensuring no features are missed by the judges. The Chart.js logic remains and will initialize correctly.
+    -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0fdf4; /* A light, fresh emerald/mint */
-        }
-        .nav-link {
-            @apply px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-fuchsia-100 hover:text-fuchsia-800 transition-colors;
-        }
-        .nav-link.active {
-            @apply bg-fuchsia-200 text-fuchsia-900 font-semibold;
-        }
-        .tab-button {
-            @apply px-4 py-2 text-left font-medium rounded-lg text-gray-700 hover:bg-emerald-100 focus:outline-none transition-all;
-        }
-        .tab-button.active {
-            @apply bg-fuchsia-600 text-white shadow-lg;
-        }
-        .card {
-            @apply bg-white p-6 rounded-xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-1;
-        }
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 320px;
-            margin-left: auto;
-            margin-right: auto;
-            height: 320px;
-            max-height: 320px;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f0fdf4; /* A light, fresh emerald/mint */
+        color: #1f2937; /* Dark gray for readability */
+      }
+      .nav-link {
+        @apply px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-fuchsia-100 hover:text-fuchsia-800 transition-colors;
+      }
+      .nav-link.active {
+        @apply bg-fuchsia-200 text-fuchsia-900 font-semibold;
+      }
+      /* Tab styles are no longer needed, but .card style is still used */
+      .card {
+        @apply bg-white p-6 rounded-xl shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5;
+      }
+      .chart-container {
+        position: relative;
+        width: 100%;
+        max-width: 320px;
+        margin-left: auto;
+        margin-right: auto;
+        height: 320px;
+        max-height: 320px;
+        padding: 1rem;
+      }
+      .accordion-header {
+        @apply flex justify-between items-center w-full text-left py-4 px-6 font-semibold bg-emerald-100 border-b border-emerald-200 rounded-t-lg transition-colors hover:bg-emerald-200;
+      }
+      .accordion-content {
+        @apply px-6 py-4 bg-white border border-emerald-200 rounded-b-lg;
+      }
+      .scroll-mt-24 {
+        scroll-margin-top: 6rem; /* Adjust for fixed header height */
+      }
     </style>
-</head>
-<body class="text-gray-800">
-
-    <header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 w-full">
-        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <div class="flex-shrink-0">
-                    <h1 class="text-xl font-bold text-fuchsia-800">Jane Doe</h1>
-                </div>
-                <div class="hidden md:block">
-                    <div id="nav-links" class="ml-10 flex items-baseline space-x-4">
-                        <a href="#problem" class="nav-link">The Problem</a>
-                        <a href="#solution" class="nav-link">The Solution</a>
-                        <a href="#features" class="nav-link">Key Features</a>
-                        <a href="#impact" class="nav-link">Impact</a>
-                    </div>
-                </div>
-                <div class="md:hidden flex items-center">
-                    <button id="mobile-menu-button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-fuchsia-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-fuchsia-500">
-                        <span class="sr-only">Open main menu</span>
-                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
-                        </svg>
-                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
-                </div>
+  </head>
+  <body class="text-gray-800">
+    <header
+      class="bg-white/95 backdrop-blur-sm shadow-md sticky top-0 z-50 w-full"
+    >
+      <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-24">
+          <div class="flex-shrink-0">
+            <h1 class="text-3xl font-extrabold text-fuchsia-800">Jane Doe</h1>
+            <span class="block text-xs font-medium text-emerald-600"
+              >The Confidentiality Network</span
+            >
+          </div>
+          <div class="hidden md:block">
+            <div id="nav-links" class="ml-10 flex items-baseline space-x-4">
+              <a href="#problem" class="nav-link active">Problem</a>
+              <a href="#solution" class="nav-link">Solution</a>
+              <a href="#features" class="nav-link">Core Pillars</a>
+              <a href="#ecosystem" class="nav-link">Ecosystem</a>
+              <a href="#impact" class="nav-link">Impact</a>
             </div>
-        </nav>
-        <div id="mobile-menu" class="md:hidden hidden">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="#problem" class="nav-link block">The Problem</a>
-                <a href="#solution" class="nav-link block">The Solution</a>
-                <a href="#features" class="nav-link block">Key Features</a>
-                <a href="#impact" class="nav-link block">Impact</a>
-            </div>
+          </div>
+          <div class="md:hidden flex items-center">
+            <button
+              id="mobile-menu-button"
+              class="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-fuchsia-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-fuchsia-500"
+            >
+              <span class="sr-only">Open main menu</span>
+              <svg
+                class="block h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16m-7 6h7"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
+      </nav>
+      <div id="mobile-menu" class="md:hidden hidden bg-white shadow-lg">
+        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <a href="#problem" class="nav-link block">The Problem</a>
+          <a href="#solution" class="nav-link block">The Solution</a>
+          <a href="#features" class="nav-link block">Core Pillars</a>
+          <a href="#ecosystem" class="nav-link block">Ecosystem</a>
+          <a href="#impact" class="nav-link block">Impact</a>
+        </div>
+      </div>
     </header>
 
     <main class="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <section
+        id="intro"
+        class="text-center py-16 md:py-24 bg-emerald-50 rounded-xl shadow-inner mb-16"
+      >
+        <span
+          class="block text-base font-semibold text-fuchsia-600 tracking-wide uppercase"
+          >SWE TechBloom Innovation Challenge Submission</span
+        >
+        <h2
+          class="mt-2 text-5xl font-extrabold text-gray-900 sm:text-6xl md:text-7xl leading-tight"
+        >
+          A Universal Shield for Campus Safety
+        </h2>
+        <p class="mt-8 max-w-4xl mx-auto text-xl text-gray-700">
+          Jane Doe is a survivor-centric toolkit designed to transform the way
+          university campuses address sexual assault and all forms of
+          gender-based violence (GBV) , merging confidential support with
+          cutting-edge, localized AI.
+        </p>
+        <p class="mt-4 text-lg text-gray-600">
+          Team: Jane Doe | Theme: Building Better Campus Life
+        </p>
+      </section>
 
-        <section id="intro" class="text-center py-16 md:py-24">
-            <span class="block text-base font-semibold text-fuchsia-600 tracking-wide uppercase">SWE TechBloom Innovation Challenge Submission</span>
-            <h2 class="mt-2 text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                Jane Doe: The Confidentiality Network
-            </h2>
-            <p class="mt-6 max-w-3xl mx-auto text-xl text-gray-600">
-                Jane Doe is a **survivor-centric toolkit** designed to build a truly better and safer campus life by transforming the way we address sexual assault, merging confidential support with cutting-edge AI.
+      <section id="problem" class="py-16 scroll-mt-24">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+            1. The Problem: The Silence Barrier
+          </h2>
+          <p class="mt-4 text-lg text-gray-700 max-w-4xl mx-auto mb-10">
+            Sexual assault and rape remain tragically pervasive issues on
+            university campuses, yet the mechanisms for support and reporting
+            are fundamentally broken. The current system fails survivors; it
+            prioritizes institutional protection or police procedure over the
+            student’s well-being and right to justice.
+          </p>
+        </div>
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="card border-t-4 border-fuchsia-500">
+            <h3 class="text-2xl font-bold text-fuchsia-700">
+              Fear & Isolation
+            </h3>
+            <p class="mt-4 text-gray-600">
+              Lack of immediate, confidential, and non-judgmental support in the
+              critical hours post-incident.
             </p>
-            <p class="mt-4 text-lg text-gray-600">
-                **Team:** Jane Doe
+          </div>
+          <div class="card border-t-4 border-fuchsia-500">
+            <h3 class="text-2xl font-bold text-fuchsia-700">
+              Evidence Paralysis
+            </h3>
+            <p class="mt-4 text-gray-600">
+              Confusion over what constitutes reportable evidence, leading to
+              vital information (time, location, communications) being lost or
+              improperly documented.
             </p>
-        </section>
+          </div>
+          <div class="card border-t-4 border-fuchsia-500">
+            <h3 class="text-2xl font-bold text-fuchsia-700">
+              Process Intimidation
+            </h3>
+            <p class="mt-4 text-gray-600">
+              The complex, opaque, and often re-victimizing administrative or
+              legal processes, resulting in massive underreporting, amplified
+              for disabled or non-native English speakers.
+            </p>
+          </div>
+        </div>
+      </section>
 
-        <section id="problem" class="py-16 scroll-mt-20">
-            <div class="text-center">
-                <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">The Problem: The Silence Barrier</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-4xl mx-auto mb-10">
-                    This section clearly defines the urgent, three-part challenge students face, which we call the **'Silence Barrier.'** Sexual assault remains tragically pervasive on university campuses, yet the existing mechanisms for support and reporting are fundamentally broken, leading to massive underreporting. Understanding these deeply entrenched barriers is crucial to appreciating how Jane Doe provides a truly comprehensive, systemic solution.
-                </p>
+      <section
+        id="solution"
+        class="py-16 scroll-mt-24 bg-emerald-50 rounded-xl shadow-inner mt-16"
+      >
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+            2. The Solution: Jane Doe - The Survivor-Centric Toolkit
+          </h2>
+          <p class="mt-4 text-lg text-gray-700 max-w-4xl mx-auto mb-10">
+            Jane Doe is a Progressive Web Application (PWA) , chosen for its
+            cross-platform availability and quick installation, ensuring it is a
+            confidential, secure, and accessible Digital Triage and
+            Documentation Platform. The application's architecture is built on
+            five core pillars of support.
+          </p>
+        </div>
+        <div
+          class="mt-12 flex flex-col md:flex-row items-center justify-center space-y-6 md:space-y-0 md:space-x-12 text-center"
+        >
+          <div
+            class="bg-white p-8 rounded-full shadow-2xl w-32 h-32 flex items-center justify-center flex-shrink-0 border-4 border-fuchsia-500"
+          >
+            <span class="text-4xl">🔒</span>
+          </div>
+          <span class="text-4xl text-fuchsia-600 font-bold hidden md:block"
+            >→</span
+          >
+          <div
+            class="bg-fuchsia-600 text-white p-6 rounded-xl shadow-2xl w-full md:w-1/3 transform hover:scale-[1.02] transition-transform"
+          >
+            <h3 class="text-3xl font-bold">JANE DOE</h3>
+            <p class="mt-1">Control. Information. Agency.</p>
+          </div>
+          <span class="text-4xl text-fuchsia-600 font-bold hidden md:block"
+            >→</span
+          >
+          <div
+            class="bg-white p-8 rounded-full shadow-2xl w-32 h-32 flex items-center justify-center flex-shrink-0 border-4 border-fuchsia-500"
+          >
+            <span class="text-4xl">⚖️</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 
+          SECTION REFACTORED: 
+          Removed the tabbed interface and replaced with a vertical grid.
+          All 5 pillars are now visible by default.
+        -->
+      <section id="features" class="py-16 scroll-mt-24">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+            Core Pillars: The Engine of Change
+          </h2>
+          <p class="mt-4 text-lg text-gray-700 max-w-4xl mx-auto mb-10">
+            The platform's innovation is driven by these five interdependent
+            pillars. This architecture guarantees security, intelligence,
+            support, and accessibility.
+          </p>
+        </div>
+        <div class="mt-12 grid grid-cols-1 gap-8">
+          <!-- Pillar A (Was visible) -->
+          <div
+            id="tab-A"
+            class="tab-content card border-l-4 border-fuchsia-500"
+          >
+            <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+              <span class="text-3xl mr-3 text-emerald-600">🔐</span> A. The
+              Confidential Evidence Locker
+            </h3>
+            <p class="mt-2 text-gray-700">
+              This feature is a highly encrypted, end-to-end secure vault for
+              collecting and timestamping critical evidence for all forms of
+              assault (sexual, physical, severe harassment) without requiring
+              immediate action. It ensures that if the survivor decides to
+              report later, critical details are preserved.
+            </p>
+            <ul class="mt-6 space-y-4 text-gray-700">
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">📍</span> Geo-Time
+                Stamping: Automatically logs GPS coordinates, time, and date for
+                evidence captured within the app.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">📸</span> Media
+                Collection: Secure storage for communication screenshots, voice
+                notes, and photographic evidence.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">📝</span> Journaling
+                Mode: A guided input system to collect crucial forensic details
+                (who, what, when, where) in a legally sound, structured manner.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Pillar B (REMOVED 'hidden' class) -->
+          <div
+            id="tab-B"
+            class="tab-content card border-l-4 border-fuchsia-500"
+          >
+            <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+              <span class="text-3xl mr-3 text-emerald-600">🧠</span> B. AI
+              Triage & Viability Engine (Interactive Simulation)
+            </h3>
+            <p class="mt-2 text-gray-700">
+              This is the core differentiator. Using a dedicated, locally hosted
+              model to ensure privacy, the AI performs an immediate, objective
+              analysis of the documented information, assessing it against known
+              university (UNILAG) and Nigerian legal requirements.
+            </p>
+
+            <div class="mt-6 bg-emerald-50 p-6 rounded-lg shadow-inner">
+              <h4 class="font-bold text-fuchsia-700 mb-2">
+                Simulate Evidence Strength:
+              </h4>
+              <label
+                for="evidence-slider"
+                class="block text-sm font-medium text-gray-700"
+                >Drag the slider to see how the AI adjusts the viability score
+                and recommended steps:</label
+              >
+              <input
+                id="evidence-slider"
+                type="range"
+                min="0"
+                max="100"
+                value="75"
+                class="w-full h-2 bg-fuchsia-300 rounded-lg appearance-none cursor-pointer mt-3"
+              />
             </div>
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="card">
-                    <h3 class="text-2xl font-bold text-fuchsia-700">1. Fear & Isolation</h3>
-                    <p class="mt-4 text-gray-600">
-                        Lack of immediate, confidential, and non-judgmental support in the critical hours post-incident, leaving survivors feeling lost and alone during a traumatic time.
-                    </p>
+
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="text-center bg-white p-4 rounded-lg shadow-md">
+                <h4 class="font-semibold text-xl text-gray-800">
+                  Case Viability Score
+                </h4>
+                <div class="chart-container">
+                  <canvas id="viabilityChart"></canvas>
+                  <div
+                    id="chart-label"
+                    class="absolute inset-0 flex items-center justify-center text-4xl font-extrabold text-gray-800"
+                  >
+                    75%
+                  </div>
                 </div>
-                <div class="card">
-                    <h3 class="text-2xl font-bold text-fuchsia-700">2. Evidence Paralysis</h3>
-                    <p class="mt-4 text-gray-600">
-                        Confusion over what constitutes legally or administratively reportable evidence, leading to vital, time-sensitive information (time, location, communications) being lost or improperly documented.
-                    </p>
-                </div>
-                <div class="card">
-                    <h3 class="text-2xl font-bold text-fuchsia-700">3. Process Intimidation</h3>
-                    <p class="mt-4 text-gray-600">
-                        The complex, opaque, and often re-victimizing nature of administrative or legal processes, which deters students from seeking justice and allows the cycle of underreporting to continue.
-                    </p>
-                </div>
+              </div>
+              <div
+                class="bg-white p-4 rounded-lg shadow-md flex flex-col justify-between"
+              >
+                <h4 class="font-semibold text-xl text-fuchsia-700">
+                  Next-Steps Checklist (Localized):
+                </h4>
+                <ul
+                  id="next-steps-list"
+                  class="mt-2 space-y-2 list-disc list-inside text-gray-700 text-left"
+                ></ul>
+              </div>
             </div>
-        </section>
+          </div>
 
-        <section id="solution" class="py-16 scroll-mt-20">
-            <div class="text-center">
-                <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">The Solution: The Survivor-Centric Toolkit</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-4xl mx-auto mb-10">
-                    The Jane Doe application isn't just a reporting tool; it’s a proactive **paradigm shift** in how support is delivered. Built as a **Progressive Web Application (PWA)** for maximum accessibility and security, the platform puts control, information, and agency back into the hands of the survivor through secure, guided, and accessible technology. The simple flow below shows the transition from crisis to empowerment.
-                </p>
+          <!-- Pillar C (REMOVED 'hidden' class) -->
+          <div
+            id="tab-C"
+            class="tab-content card border-l-4 border-fuchsia-500"
+          >
+            <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+              <span class="text-3xl mr-3 text-emerald-600">💖</span> C. The Jane
+              Doe Companion (Daily Support)
+            </h3>
+            <p class="mt-2 text-gray-700">
+              This optional, non-reporting support system is designed to be a
+              gentle presence. It ensures the app is a resource for proactive
+              mental wellness , not just crisis management.
+            </p>
+            <ul class="mt-6 space-y-4 text-gray-700">
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">☀️</span> Daily
+                Encouragement: Provides short, motivational, and uplifting
+                messages (editable by the user) to promote positive self-talk
+                and resilience.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">🧘</span> Guided
+                Wellness: Offers simple, guided exercises like 60-second
+                breathing techniques or grounding visualizations to manage
+                anxiety and stress.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">💬</span> Messaging
+                Partner: A non-judgmental, general-purpose chatbot (separate
+                from the Triage AI) available 24/7 for emotional support and
+                anonymous venting.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Pillar D (REMOVED 'hidden' class) -->
+          <div
+            id="tab-D"
+            class="tab-content card border-l-4 border-fuchsia-500"
+          >
+            <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+              <span class="text-3xl mr-3 text-emerald-600">♿</span> D. Radical
+              Accessibility & Stealth Mode
+            </h3>
+            <p class="mt-2 text-gray-700">
+              The platform is built with WCAG 2.1 AA standards compliance and
+              focuses on low-literacy/disability-friendly interfaces to ensure
+              Jane Doe is a universal shield.
+            </p>
+            <ul class="mt-6 space-y-4 text-gray-700">
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">🌐</span>
+                Multilingual Interface: Supports major local languages (e.g.,
+                Yoruba, Igbo, Hausa ) via text and voice prompts.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">💡</span>
+                Visual/Icon-Driven UI: Uses clear, large icons and minimal text
+                for ease of use in moments of high stress.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">🤫</span> "Quiet
+                Mode": A single-tap feature that instantly changes the app theme
+                to look like a generic note-taking app or course schedule,
+                minimizing risk if the phone is inspected by others.
+              </li>
+            </ul>
+          </div>
+
+          <!-- Pillar E (REMOVED 'hidden' class) -->
+          <div
+            id="tab-E"
+            class="tab-content card border-l-4 border-fuchsia-500"
+          >
+            <h3 class="text-2xl font-bold text-gray-900 flex items-center">
+              <span class="text-3xl mr-3 text-emerald-600">🫂</span> E. Witness
+              & Proxy Reporting
+            </h3>
+            <p class="mt-2 text-gray-700">
+              This critical community feature allows others to report on behalf
+              of someone else while maintaining the utmost confidentiality and
+              respecting the survivor's ultimate consent and safety.
+            </p>
+            <ul class="mt-6 space-y-4 text-gray-700">
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">📣</span>
+                Third-Party Reporter Mode: Lets trusted peers file "Concern
+                Reports" for suspected or observed assaults, initiating the
+                Evidence Locker process anonymously.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">📜</span> AI
+                Prompts: AI guides the reporter to describe observations in
+                neutral, fact-based terms, reducing bias and hearsay.
+              </li>
+              <li class="font-semibold flex items-start">
+                <span class="text-fuchsia-500 text-xl mr-2">🤝</span> "Check-in"
+                Consent Chain: The app can later send an encrypted consent
+                request to the survivor (e.g., “Would you like to take over this
+                report?”) to ensure agency.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section id="ecosystem" class="py-16 scroll-mt-24">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+            Future Ecosystem: Scalability & Prevention
+          </h2>
+          <p class="mt-4 text-lg text-gray-700 max-w-4xl mx-auto mb-10">
+            Jane Doe is designed to scale beyond the initial campus deployment.
+            These add-on features and the long-term Student Network vision
+            ensure we shift the culture from reaction to prevention and holistic
+            recovery.
+          </p>
+        </div>
+        <div class="mt-12 space-y-4 max-w-4xl mx-auto">
+          <!-- ACCORDION 1: Reporting & Escalation -->
+          <div class="accordion-item">
+            <button class="accordion-header" data-accordion="acc-1">
+              <span>Multi-Pathway Reporting & Escalation</span>
+              <span class="transform transition-transform duration-300">▼</span>
+            </button>
+            <div class="accordion-content hidden">
+              <ul class="space-y-3 text-gray-700">
+                <li>
+                  Interface Additions: Allows users to select from multiple
+                  reporting routes: Law enforcement, NGOs/helplines (WARIF,
+                  Mirabel Centre), University Gender Desks.
+                </li>
+                <li>
+                  Auto-Fill Reports: Uses stored evidence to automatically
+                  generate official complaint templates (editable before
+                  submission).
+                </li>
+                <li>
+                  Escalation Tracker: A private dashboard that tracks case
+                  status anonymously (submitted, pending, under review, etc.).
+                </li>
+              </ul>
             </div>
-            <div class="mt-12 flex flex-col md:flex-row items-center justify-center space-y-4 md:space-y-0 md:space-x-8 text-center">
-                <div class="bg-white p-6 rounded-xl shadow-lg w-full md:w-1/4 transform hover:scale-105 transition-transform">
-                    <span class="text-5xl">👩‍🎓</span>
-                    <h3 class="text-xl font-semibold mt-2 text-fuchsia-700">The Survivor</h3>
-                    <p class="text-gray-600">Facing the Silence Barrier</p>
-                </div>
-                <span class="text-4xl text-fuchsia-600 font-bold transform rotate-90 md:rotate-0">→</span>
-                 <div class="bg-fuchsia-600 text-white p-8 rounded-xl shadow-2xl w-full md:w-1/3 transform hover:scale-110 transition-transform">
-                    <span class="text-5xl">📱</span>
-                    <h3 class="text-2xl font-bold mt-2">Jane Doe App</h3>
-                    <p>Secure, Guided, Supportive</p>
-                </div>
-                <span class="text-4xl text-fuchsia-600 font-bold transform rotate-90 md:rotate-0">→</span>
-                <div class="bg-white p-6 rounded-xl shadow-lg w-full md:w-1/4 transform hover:scale-105 transition-transform">
-                    <span class="text-5xl">⚖️</span>
-                    <h3 class="text-xl font-semibold mt-2 text-fuchsia-700">Empowerment</h3>
-                    <p class="text-gray-600">Agency & Justice Achieved</p>
-                </div>
+          </div>
+
+          <!-- ACCORDION 2: AI Decision Support -->
+          <div class="accordion-item">
+            <button class="accordion-header" data-accordion="acc-2">
+              <span>AI Decision Support & Legal Guidance</span>
+              <span class="transform transition-transform duration-300">▼</span>
+            </button>
+            <div class="accordion-content hidden">
+              <ul class="space-y-3 text-gray-700">
+                <li>
+                  Custom Legal Mapping: Ties case info to both Nigerian and
+                  international laws (helpful if scaling globally).
+                </li>
+                <li>
+                  Jurisdiction Selector: Detects user location to provide
+                  accurate legal context and resource options.
+                </li>
+                <li>
+                  “Is This Assault?” Quiz: A gentle educational feature that
+                  helps users identify coercion, harassment, or abuse patterns
+                  they might not recognize as reportable.
+                </li>
+              </ul>
             </div>
-        </section>
+          </div>
 
-        <section id="features" class="py-16 scroll-mt-20">
-            <div class="text-center">
-                <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Key Features: The Four Pillars</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-4xl mx-auto mb-10">
-                    The features section allows you to explore the four distinct pillars of the Jane Doe platform. From the secure, passive collection of data in the **Evidence Locker** to the proactive, non-reporting support of the **Jane Doe Companion**, this architecture ensures full-spectrum support. Use the interactive tabs below to drill down into the innovation behind each module and see a simulation of our unique AI.
-                </p>
+          <!-- ACCORDION 3: Data Sharing & Chain of Custody -->
+          <div class="accordion-item">
+            <button class="accordion-header" data-accordion="acc-3">
+              <span>Confidential Data Sharing & Digital Chain of Custody</span>
+              <span class="transform transition-transform duration-300">▼</span>
+            </button>
+            <div class="accordion-content hidden">
+              <ul class="space-y-3 text-gray-700">
+                <li>
+                  One-Time Evidence Links: Generates expiring, shareable case
+                  packages for lawyers or NGOs.
+                </li>
+                <li>
+                  Evidence Verification Badge: Timestamped, cryptographically
+                  signed metadata to prove the data’s integrity in court.
+                </li>
+                <li>
+                  Anonymous Data Pools: De-identified data shared to help
+                  governments and NGOs map assault hotspots.
+                </li>
+              </ul>
             </div>
-            <div class="mt-12 flex flex-col md:flex-row gap-8">
-                <div id="tabs-buttons" class="flex md:flex-col md:w-1/4 space-x-2 md:space-x-0 md:space-y-2 overflow-x-auto pb-2">
-                    <button class="tab-button active" data-tab="tab-A">A. Evidence Locker</button>
-                    <button class="tab-button" data-tab="tab-B">B. AI Triage Engine</button>
-                    <button class="tab-button" data-tab="tab-C">C. Jane Doe Companion</button>
-                    <button class="tab-button" data-tab="tab-D">D. Accessibility</button>
-                </div>
+          </div>
 
-                <div class="md:w-3/4">
-                    <div id="tab-A" class="tab-content card">
-                        <h3 class="text-2xl font-bold text-gray-900">A. The Confidential Evidence Locker</h3>
-                        <p class="mt-2 text-gray-600">This feature is a highly encrypted, end-to-end secure vault for collecting and timestamping critical evidence **without requiring immediate action**. It ensures that if the survivor decides to report hours or days later, the critical details are preserved.</p>
-                        <ul class="mt-6 space-y-4">
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">⏱️</span>
-                                <div>
-                                    <h4 class="font-semibold">Geo-Time Stamping</h4>
-                                    <p class="text-gray-600">Automatically logs GPS coordinates, time, and date for evidence captured within the app, providing objective, indisputable data points.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">📸</span>
-                                <div>
-                                    <h4 class="font-semibold">Media Collection</h4>
-                                    <p class="text-gray-600">Secure storage for communication screenshots, voice notes, and photographic evidence, keeping them separate from standard phone galleries.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">✍️</span>
-                                <div>
-                                    <h4 class="font-semibold">Journaling Mode</h4>
-                                    <p class="text-gray-600">A guided text/voice input system designed to collect crucial forensic details (who, what, when, where) in a legally sound, structured manner.</p>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div id="tab-B" class="tab-content card hidden">
-                        <h3 class="text-2xl font-bold text-gray-900">B. AI Triage & Viability Engine (Interactive Simulation)</h3>
-                        <p class="mt-2 text-gray-600">This is the core differentiator. Using a locally hosted model to ensure privacy, the AI performs an immediate, objective analysis of the documented information, assessing it against known university and legal statutes to manage expectations and guide next steps.</p>
-                        
-                        <div class="mt-6 bg-emerald-50 p-6 rounded-lg">
-                            <label for="evidence-slider" class="block text-sm font-medium text-gray-700">Simulate Evidence Strength (Slide to Interact):</label>
-                            <input id="evidence-slider" type="range" min="0" max="100" value="75" class="w-full h-2 bg-fuchsia-300 rounded-lg appearance-none cursor-pointer">
-                        </div>
-
-                        <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="text-center">
-                                <h4 class="font-semibold">Case Viability Score</h4>
-                                <div class="chart-container">
-                                    <canvas id="viabilityChart"></canvas>
-                                    <div id="chart-label" class="absolute inset-0 flex items-center justify-center text-4xl font-bold text-gray-800">75%</div>
-                                </div>
-                            </div>
-                            <div>
-                                <h4 class="font-semibold">Recommended Next-Steps:</h4>
-                                <ul id="next-steps-list" class="mt-2 space-y-2 list-disc list-inside text-gray-700">
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="tab-C" class="tab-content card hidden">
-                        <h3 class="text-2xl font-bold text-gray-900">C. The Jane Doe Companion (Daily Support)</h3>
-                        <p class="mt-2 text-gray-600">This is an optional, non-reporting support system designed to be a gentle presence. It ensures the app is a resource for **proactive mental wellness** and resilience, not just crisis management, establishing a comforting routine.</p>
-                        <ul class="mt-6 space-y-4">
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">☀️</span>
-                                <div>
-                                    <h4 class="font-semibold">Daily Encouragement</h4>
-                                    <p class="text-gray-600">Provides short, motivational, and uplifting messages (customizable by the user) to promote positive self-talk and resilience every day.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">🧘</span>
-                                <div>
-                                    <h4 class="font-semibold">Guided Wellness</h4>
-                                    <p class="text-gray-600">Offers simple, guided exercises like 60-second breathing techniques or grounding visualizations to manage immediate anxiety and stress.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">💬</span>
-                                <div>
-                                    <h4 class="font-semibold">Messaging Partner</h4>
-                                    <p class="text-gray-600">A non-judgmental, general-purpose chatbot available 24/7 for emotional support and anonymous venting, completely siloed from the legal evidence locker.</p>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div id="tab-D" class="tab-content card hidden">
-                        <h3 class="text-2xl font-bold text-gray-900">D. Radical Accessibility & Stealth Mode</h3>
-                        <p class="mt-2 text-gray-600">This pillar ensures Jane Doe is truly a resource for *all* female students. The platform is built with **WCAG 2.1 AA** standards compliance and focuses on low-literacy/disability-friendly interfaces.</p>
-                        <ul class="mt-6 space-y-4">
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">🌍</span>
-                                <div>
-                                    <h4 class="font-semibold">Multilingual Interface</h4>
-                                    <p class="text-gray-600">Supports major local languages (e.g., Yoruba, Igbo, Hausa) via text and voice prompts to break down language barriers during crisis.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">👁️</span>
-                                <div>
-                                    <h4 class="font-semibold">Visual/Icon-Driven UI</h4>
-                                    <p class="text-gray-600">Uses clear, large icons and minimal text for ease of use in moments of high stress, aiding those with cognitive or visual disabilities.</p>
-                                </div>
-                            </li>
-                            <li class="flex items-start">
-                                <span class="text-2xl mr-3 text-fuchsia-500">🤫</span>
-                                <div>
-                                    <h4 class="font-semibold">"Quiet Mode"</h4>
-                                    <p class="text-gray-600">A single-tap feature that instantly changes the app theme to look like a generic note-taking app or course schedule, minimizing risk if the phone is inspected by others.</p>
-                                </div>
-                            </div>
-                        </ul>
-                    </div>
-                </div>
+          <!-- ACCORDION 4: Prevention & Awareness -->
+          <div class="accordion-item">
+            <button class="accordion-header" data-accordion="acc-4">
+              <span>Community Awareness & Prevention Hub</span>
+              <span class="transform transition-transform duration-300">▼</span>
+            </button>
+            <div class="accordion-content hidden">
+              <ul class="space-y-3 text-gray-700">
+                <li>
+                  Bystander Training Mode: Gamified scenarios teaching users
+                  what to do when they witness harassment.
+                </li>
+                <li>
+                  Campus Safety Heatmaps: Aggregate (anonymized) reports to
+                  visually highlight unsafe zones or recurring problem areas.
+                </li>
+                <li>
+                  Partnership Portal: Space for NGOs, gender desks, or police to
+                  post verified events, training, or awareness drives.
+                </li>
+              </ul>
             </div>
-        </section>
+          </div>
+        </div>
+      </section>
 
-        <section id="impact" class="py-16 scroll-mt-20">
-            <div class="text-center">
-                <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">Why It Matters: Impact & Accountability</h2>
-                <p class="mt-4 text-lg text-gray-600 max-w-4xl mx-auto mb-10">
-                    Our mission extends beyond a single campus—it's about driving institutional change. This section outlines the three key areas of impact: individual empowerment, data-driven accountability, and ensuring true inclusion for every female student, ultimately defining a safer campus culture.
-                </p>
-            </div>
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="card">
-                    <h3 class="text-xl font-bold text-fuchsia-700">Empowerment through Information</h3>
-                    <p class="mt-4 text-gray-600">
-                        Jane Doe converts the paralyzing confusion of the aftermath into clear, actionable steps, drastically lowering the barrier to reporting and seeking help.
-                    </p>
-                </div>
-                <div class="card">
-                    <h3 class="text-xl font-bold text-fuchsia-700">Data-Driven Accountability</h3>
-                    <p class="mt-4 text-gray-600">
-                        By standardizing and securing evidence collection, it provides administrators and legal teams with cleaner, more robust cases, making it fundamentally harder for institutions to ignore or mishandle reports.
-                    </p>
-                </div>
-                <div class="card">
-                    <h3 class="text-xl font-bold text-fuchsia-700">Inclusion for All</h3>
-                    <p class="mt-4 text-gray-600">
-                        By prioritizing disability and language access (Yoruba, Igbo, Hausa), Jane Doe ensures that **all** female students, regardless of background or ability, have a confidential path to justice.
-                    </v>
-                </div>
-            </div>
-        </section>
-
+      <section id="impact" class="py-16 scroll-mt-24">
+        <div class="text-center">
+          <h2 class="text-3xl font-bold text-gray-900 sm:text-4xl">
+            3. Why It Matters: Impact and Accountability
+          </h2>
+          <p class="mt-4 text-lg text-gray-700 max-w-4xl mx-auto mb-10">
+            Jane Doe doesn't just treat the symptom; it addresses systemic
+            failure by focusing on survivor empowerment and institutional
+            accountability, creating a truly safe campus for everyone.
+          </p>
+        </div>
+        <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="card bg-fuchsia-50 border-t-4 border-emerald-500">
+            <h3 class="text-xl font-bold text-fuchsia-700">
+              Empowerment through Information
+            </h3>
+            <p class="mt-4 text-gray-600">
+              The AI converts the paralyzing confusion of the aftermath into
+              clear, actionable steps, drastically lowering the barrier to
+              reporting and seeking help.
+            </p>
+          </div>
+          <div class="card bg-fuchsia-50 border-t-4 border-emerald-500">
+            <h3 class="text-xl font-bold text-fuchsia-700">
+              Data-Driven Accountability
+            </h3>
+            <p class="mt-4 text-gray-600">
+              By standardizing and securing evidence collection, it provides
+              administrators and legal teams with cleaner, more complete cases,
+              making it harder for institutions to ignore or mishandle reports.
+            </p>
+          </div>
+          <div class="card bg-fuchsia-50 border-t-4 border-emerald-500">
+            <h3 class="text-xl font-bold text-fuchsia-700">
+              Inclusion for All
+            </h3>
+            <p class="mt-4 text-gray-600">
+              By prioritizing disability, language access, and proxy reporting,
+              Jane Doe ensures that all female students, regardless of
+              background or ability, have a confidential path to justice.
+            </p>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="bg-white border-t border-fuchsia-100 mt-16">
-        <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-500">
-            <p>&copy; 2025 Jane Doe Team. A submission for the SWE TechBloom Innovation Challenge.</p>
-        </div>
+      <div
+        class="container mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600"
+      >
+        <p>
+          &copy; 2025 Jane Doe Team. A submission for the SWE TechBloom
+          Innovation Challenge.
+        </p>
+      </div>
     </footer>
 
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const mobileMenuButton = document.getElementById('mobile-menu-button');
-            const mobileMenu = document.getElementById('mobile-menu');
-            const navLinks = mobileMenu.querySelectorAll('a');
-            const mainNavLinks = document.getElementById('nav-links').querySelectorAll('a');
+      document.addEventListener("DOMContentLoaded", () => {
+        // --- Navigation Logic ---
+        const mobileMenuButton = document.getElementById("mobile-menu-button");
+        const mobileMenu = document.getElementById("mobile-menu");
+        const navLinks = document.querySelectorAll('a[href^="#"]');
+        const mainNavLinks = document
+          .getElementById("nav-links")
+          ?.querySelectorAll("a");
 
-            mobileMenuButton.addEventListener('click', () => {
-                const isHidden = mobileMenu.classList.contains('hidden');
-                mobileMenu.classList.toggle('hidden');
-                mobileMenuButton.querySelector('svg.block').classList.toggle('hidden', !isHidden);
-                mobileMenuButton.querySelector('svg.hidden').classList.add('hidden');
-            });
+        if (mobileMenuButton) {
+          mobileMenuButton.addEventListener("click", () => {
+            mobileMenu.classList.toggle("hidden");
+          });
+        }
 
-            navLinks.forEach(link => {
-                link.addEventListener('click', () => {
-                    mobileMenu.classList.add('hidden');
-                    mobileMenuButton.querySelector('svg.block').classList.remove('hidden');
-                    mobileMenuButton.querySelector('svg.hidden').classList.add('hidden');
-                });
-            });
-
-            const sections = document.querySelectorAll('section[id]');
-            const navLinksMap = new Map();
-            mainNavLinks.forEach(link => navLinksMap.set(link.hash, link));
-
-            const observerOptions = {
-                root: null,
-                rootMargin: '0px',
-                threshold: 0.3
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        mainNavLinks.forEach(link => {
-                            link.classList.remove('active');
-                            if (link.hash === `#${entry.target.id}`) {
-                                link.classList.add('active');
-                            }
-                        });
-                    }
-                });
-            }, observerOptions);
-
-            sections.forEach(section => {
-                observer.observe(section);
-            });
-
-            const tabButtons = document.querySelectorAll('.tab-button');
-            const tabContents = document.querySelectorAll('.tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    button.classList.add('active');
-
-                    const tabId = button.getAttribute('data-tab');
-                    tabContents.forEach(content => {
-                        content.classList.add('hidden');
-                        if (content.id === tabId) {
-                            content.classList.remove('hidden');
-                            if (tabId === 'tab-B') {
-                                // Re-run chart update when AI tab is opened
-                                updateChart(slider.value);
-                            }
-                        }
-                    });
-                });
-            });
-
-            const ctx = document.getElementById('viabilityChart').getContext('2d');
-            const chartLabel = document.getElementById('chart-label');
-            const slider = document.getElementById('evidence-slider');
-            const stepsList = document.getElementById('next-steps-list');
-
-            const getChartColor = (value) => {
-                if (value < 33) return '#dc2626'; // Red
-                if (value < 66) return '#f59e0b'; // Amber
-                return '#10b981'; // Emerald Green
+        navLinks.forEach((link) => {
+          link.addEventListener("click", (e) => {
+            const targetId = link.getAttribute("href").substring(1);
+            const targetElement = document.getElementById(targetId);
+            if (targetElement) {
+              e.preventDefault();
+              targetElement.scrollIntoView({ behavior: "smooth" });
             }
-
-            const getSteps = (value) => {
-                if (value < 33) {
-                    return [
-                        "Status: LOW VIABILITY. Priority on personal safety.",
-                        "IMMEDIATE: Contact the **Campus Counselling Unit** for support.",
-                        "Seek **Lagos State DSVA** assistance for forensic evidence (if required).",
-                        "Use the Companion for emotional grounding and check-ins."
-                    ];
-                } else if (value < 66) {
-                    return [
-                        "Status: MODERATE VIABILITY. Crucial data points are present.",
-                        "PRESERVE: Secure all media (screenshots, voice notes) in the Evidence Locker.",
-                        "The AI suggests filling out the **Formal Incident Form** now to timestamp intent.",
-                        "Consult with a trusted non-reporting staff advocate or lecturer."
-                    ];
-                } else {
-                    return [
-                        "Status: HIGH VIABILITY. Proceed to formal process.",
-                        "Formally report to the **UNILAG Student Affairs Division (SAD)** or **Gender Policy Implementation Committee**.",
-                        "Initiate contact with a reliable NGO (e.g., Mirabel Centre) for legal guidance and representation.",
-                        "Be prepared to make a statement to **Campus Security (CSU)** if proceeding formally."
-                    ];
-                }
-            };
-
-            const updateSteps = (value) => {
-                stepsList.innerHTML = '';
-                const steps = getSteps(value);
-                steps.forEach(step => {
-                    const li = document.createElement('li');
-                    li.textContent = step;
-                    stepsList.appendChild(li);
-                });
-            };
-
-            const viabilityChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    datasets: [{
-                        data: [75, 25],
-                        backgroundColor: [getChartColor(75), '#d1d5db'], // Gray-300
-                        borderWidth: 0,
-                        cutout: '80%',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: false }
-                    },
-                    animation: {
-                        duration: 200 
-                    }
-                }
-            });
-
-            const updateChart = (value) => {
-                const numericValue = parseInt(value, 10);
-                viabilityChart.data.datasets[0].data = [numericValue, 100 - numericValue];
-                viabilityChart.data.datasets[0].backgroundColor[0] = getChartColor(numericValue);
-                viabilityChart.update();
-                chartLabel.textContent = `${numericValue}%`;
-                updateSteps(numericValue);
-            };
-
-            slider.addEventListener('input', (e) => {
-                updateChart(e.target.value);
-            });
-
-            updateChart(slider.value);
+            if (mobileMenu && !mobileMenu.classList.contains("hidden")) {
+              mobileMenu.classList.add("hidden");
+            }
+          });
         });
+
+        // Intersection Observer for highlighting active link
+        if (mainNavLinks) {
+          const sections = document.querySelectorAll("section[id]");
+          const observerOptions = {
+            root: null,
+            rootMargin: "0px",
+            threshold: 0.3,
+          };
+
+          const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                mainNavLinks.forEach((link) => {
+                  link.classList.remove("active");
+                  if (link.hash === `#${entry.target.id}`) {
+                    link.classList.add("active");
+                  }
+                });
+              }
+            });
+          }, observerOptions);
+
+          sections.forEach((section) => {
+            observer.observe(section);
+          });
+        }
+
+        // --- Accordion Logic (Future Ecosystem) ---
+        document.querySelectorAll(".accordion-header").forEach((header) => {
+          header.addEventListener("click", () => {
+            const content = header.nextElementSibling;
+            const icon = header.querySelector("span:last-child");
+            const isOpen = !content.classList.contains("hidden");
+
+            // Close all others
+            document
+              .querySelectorAll(".accordion-content")
+              .forEach((c) => c.classList.add("hidden"));
+            document
+              .querySelectorAll(".accordion-header span:last-child")
+              .forEach((i) => (i.style.transform = "rotate(0deg)"));
+
+            // Open the clicked one
+            if (!isOpen) {
+              content.classList.remove("hidden");
+              icon.style.transform = "rotate(180deg)";
+            }
+          });
+        });
+
+        // --- Chart & AI Triage Simulator Logic ---
+        const ctx = document.getElementById("viabilityChart")?.getContext("2d");
+        const chartLabel = document.getElementById("chart-label");
+        const slider = document.getElementById("evidence-slider");
+        const stepsList = document.getElementById("next-steps-list");
+        let viabilityChart = null; // Chart instance holder
+
+        const getChartColor = (value) => {
+          if (value < 33) return "#dc2626"; // Red
+          if (value < 66) return "#f59e0b"; // Amber
+          return "#059669"; // Emerald-600
+        }; // Added semicolon for robustness
+
+        // Localized UNILAG/Nigerian Context Steps
+        const getSteps = (value) => {
+          if (value < 33) {
+            return [
+              "Status: LOW VIABILITY. Priority on personal safety and healing.",
+              "IMMEDIATE: Contact the  Campus Counselling Unit  for trauma-informed support.",
+              "Seek  Lagos State DSVA  assistance for forensic evidence preservation (if required).",
+              "Use the Companion for emotional grounding and check-ins.",
+            ];
+          } else if (value < 66) {
+            return [
+              "Status: MODERATE VIABILITY. Crucial data points are present.",
+              "PRESERVE: Secure all digital media (screenshots, voice notes) in the Evidence Locker.",
+              "Consult with a trusted non-reporting staff advocate or the  UNILAG Gender Desk  for informal guidance.",
+              "The AI suggests filling out the  Formal Incident Form  now to timestamp intent, without final submission.",
+            ];
+          } else {
+            return [
+              "Status: HIGH VIABILITY. Proceed to formal process.",
+              "Formally report to the  UNILAG Student Affairs Division (SAD)  or  Gender Policy Implementation Committee .",
+              "Initiate contact with a reliable NGO (e.g.,  WARIF or Mirabel Centre ) for legal guidance and representation.",
+              "Be prepared to make a statement to  Campus Security (CSU)  if proceeding formally. (Only if safe).",
+            ];
+          }
+        }; // Added semicolon for robustness
+
+        const updateSteps = (value) => {
+          if (!stepsList) return;
+          stepsList.innerHTML = "";
+          const steps = getSteps(value);
+          steps.forEach((step) => {
+            const li = document.createElement("li");
+            // Use innerHTML to parse the  bold  tags
+            li.innerHTML = step.replace(
+              /\*\*(.*?)\*\*/g,
+              '<strong class="text-fuchsia-800">$1</strong>'
+            );
+            stepsList.appendChild(li);
+          });
+        }; // Added semicolon for robustness
+
+        const initializeChart = (initialValue) => {
+          if (!ctx) return;
+          viabilityChart = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+              datasets: [
+                {
+                  data: [initialValue, 100 - initialValue],
+                  backgroundColor: [getChartColor(initialValue), "#e5e7eb"], // Gray-200
+                  borderWidth: 0,
+                  cutout: "80%",
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: { enabled: false },
+              },
+              animation: {
+                duration: 200,
+              },
+            },
+          });
+        }; // Added semicolon for robustness
+
+        const updateChart = (value) => {
+          const numericValue = parseInt(value, 10);
+          if (viabilityChart) {
+            viabilityChart.data.datasets[0].data = [
+              numericValue,
+              100 - numericValue,
+            ];
+            viabilityChart.data.datasets[0].backgroundColor[0] =
+              getChartColor(numericValue);
+            viabilityChart.update();
+          } else {
+            initializeChart(numericValue);
+          }
+          if (chartLabel) chartLabel.textContent = `${numericValue}%`;
+          updateSteps(numericValue);
+        }; // Added semicolon for robustness
+
+        if (slider) {
+          slider.addEventListener("input", (e) => {
+            updateChart(e.target.value);
+          });
+          updateChart(slider.value); // Initial render
+        }
+      });
     </script>
-</body>
+  </body>
 </html>
